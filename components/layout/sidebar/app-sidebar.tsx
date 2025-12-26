@@ -20,6 +20,7 @@ import { NavUser } from "@/components/layout/sidebar/nav-user";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Logo from "@/components/layout/logo";
 import { DropdownMenu } from "@/components/ui/dropdown-menu";
+import { APP_CONFIG } from "@/lib/config";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const pathname = usePathname();
@@ -42,7 +43,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <DropdownMenu>
               <SidebarMenuButton className="hover:text-foreground h-10 group-data-[collapsible=icon]:px-0! hover:bg-[var(--primary)]/5">
                 <Logo />
-                <span className="font-semibold">Southern Apparels and Holdings</span>
+                <span className="font-semibold">{APP_CONFIG.COMPANY_NAME}</span>
               </SidebarMenuButton>
             </DropdownMenu>
           </SidebarMenuItem>

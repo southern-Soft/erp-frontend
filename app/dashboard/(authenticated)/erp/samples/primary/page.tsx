@@ -28,30 +28,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { API_LIMITS } from "@/lib/config";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { PlusCircle, Edit, Trash2, Search, X } from "lucide-react";
 import { toast } from "sonner";
 
-// Helper function to generate Sample ID: {BuyerCode}_{YYYY}_{MM}_{001}
-const generateSampleId = async (buyerName: string) => {
-  const buyerCode = buyerName.substring(0, 3).toUpperCase();
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, "0");
-
-  // Get existing samples with same buyer/year/month to find next sequence
-  try {
-    const response = await fetch(`/api/v1/samples/?buyer_code=${buyerCode}&year=${year}&month=${month}`);
-    const samples = await response.json();
-    const sequence = String(samples.length + 1).padStart(3, "0");
-    return `${buyerCode}_${year}_${month}_${sequence}`;
-  } catch (error) {
-    // Fallback if API fails
-    const sequence = "001";
-    return `${buyerCode}_${year}_${month}_${sequence}`;
-  }
-};
+import { generateSampleId } from "@/services/utils";
+import { api } from "@/services/api";
 
 export default function SamplePrimaryInfoPage() {
   const [samples, setSamples] = useState<any[]>([]);
@@ -123,7 +107,7 @@ export default function SamplePrimaryInfoPage() {
   const loadStyles = async () => {
     try {
       // Load style summaries to show each style only once (not individual variants)
-      const response = await fetch("/api/v1/samples/styles?limit=1000");
+      const response = await fetch(`/api/v1/samples/styles?limit=${API_LIMITS.STYLES}`);
       if (response.ok) {
         const data = await response.json();
         setStyles(Array.isArray(data) ? data : []);
@@ -183,7 +167,8 @@ export default function SamplePrimaryInfoPage() {
     const buyer = buyers.find((b) => b.id.toString() === buyerId);
     if (buyer) {
       // Auto-generate Sample ID
-      const sampleId = await generateSampleId(buyer.buyer_name);
+      const allSamples = await api.samples.getAll();
+      const sampleId = await generateSampleId(buyer.buyer_name, Array.isArray(allSamples) ? allSamples : []);
 
       setFormData({
         ...formData,

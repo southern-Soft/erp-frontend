@@ -16,21 +16,13 @@ import * as React from "react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { ProfileDialog } from "@/components/profile-dialog";
+import { getInitials } from "@/services/utils";
 
 export default function UserMenu() {
   const { user, logout, isLoading } = useAuth();
   const [profileOpen, setProfileOpen] = useState(false);
 
   console.log("[UserMenu] Rendered - isLoading:", isLoading, "user:", user?.username);
-
-  const getInitials = (name: string) => {
-    if (!name) return "U";
-    const parts = name.split(" ");
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
-    }
-    return name.substring(0, 2).toUpperCase();
-  };
 
   const handleLogout = () => {
     logout();

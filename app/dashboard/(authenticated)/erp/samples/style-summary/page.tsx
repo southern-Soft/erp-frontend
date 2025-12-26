@@ -34,27 +34,11 @@ import {
 import { PlusCircle, Edit, Trash2, Search, X } from "lucide-react";
 import { ExportButton } from "@/components/export-button";
 import type { ExportColumn } from "@/lib/export-utils";
-import { api } from "@/lib/api";
+import { api } from "@/services/api";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-// Helper function to format timestamps
-const formatDateTime = (dateString: string | null | undefined) => {
-  if (!dateString) return "-";
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch {
-    return "-";
-  }
-};
+import { formatDateTimeWithFallback, generateStyleId } from "@/services/utils";
 
 export default function StyleSummaryPage() {
   const [styles, setStyles] = useState<any[]>([]);
@@ -142,13 +126,6 @@ export default function StyleSummaryPage() {
   const uniqueGauges = [...new Set(styles.map((s: any) => s.gauge).filter(Boolean))].sort();
   const uniqueCategories = [...new Set(styles.map((s: any) => s.product_category).filter(Boolean))].sort();
 
-  const generateStyleId = async (styleName: string) => {
-    // Generate automatic ID if not provided
-    const prefix = styleName.substring(0, 3).toUpperCase();
-    const timestamp = Date.now().toString().slice(-6);
-    return `${prefix}${timestamp}`;
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -234,8 +211,8 @@ export default function StyleSummaryPage() {
     { key: "gauge", header: "Gauge" },
     { key: "is_set", header: "Is Set", transform: (value) => value ? "Yes" : "No" },
     { key: "set_piece_count", header: "Set Piece Count" },
-    { key: "created_at", header: "Created At", transform: (value) => formatDateTime(value) },
-    { key: "updated_at", header: "Updated At", transform: (value) => formatDateTime(value) },
+    { key: "created_at", header: "Created At", transform: (value) => formatDateTimeWithFallback(value) },
+    { key: "updated_at", header: "Updated At", transform: (value) => formatDateTimeWithFallback(value) },
   ];
 
   return (
@@ -585,8 +562,8 @@ export default function StyleSummaryPage() {
                   <TableCell>{style.product_category || "-"}</TableCell>
                   <TableCell>{style.product_type || "-"}</TableCell>
                   <TableCell>{style.gauge || "-"}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDateTime(style.created_at)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDateTime(style.updated_at)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDateTimeWithFallback(style.created_at)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDateTimeWithFallback(style.updated_at)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
                       <Button
@@ -674,11 +651,11 @@ export default function StyleSummaryPage() {
                 )}
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-muted-foreground">Created At</Label>
-                  <p className="text-base">{formatDateTime(selectedStyle.created_at)}</p>
+                  <p className="text-base">{formatDateTimeWithFallback(selectedStyle.created_at)}</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-muted-foreground">Updated At</Label>
-                  <p className="text-base">{formatDateTime(selectedStyle.updated_at)}</p>
+                  <p className="text-base">{formatDateTimeWithFallback(selectedStyle.updated_at)}</p>
                 </div>
               </div>
             </div>

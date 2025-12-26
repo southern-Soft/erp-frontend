@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { APP_CONFIG } from "@/lib/config";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,16 +37,16 @@ export default function LoginPage() {
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-4">
             <Image
-              src="/logo.jpeg"
-              alt="Southern Apparels Logo"
+              src={APP_CONFIG.LOGO_PATH}
+              alt={`${APP_CONFIG.NAME} Logo`}
               width={120}
               height={120}
               className="mx-auto"
               priority
             />
           </div>
-          <CardTitle className="text-2xl font-bold">Southern Apparels</CardTitle>
-          <CardDescription>Sign in to access ERP System</CardDescription>
+          <CardTitle className="text-2xl font-bold">{APP_CONFIG.NAME}</CardTitle>
+          <CardDescription>Sign in to access {APP_CONFIG.DESCRIPTION}</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">

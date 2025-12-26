@@ -35,21 +35,7 @@ import { toast } from "sonner";
 import { countries } from "@/lib/countries";
 
 // Helper function to format timestamps
-const formatDateTime = (dateString: string | null | undefined) => {
-  if (!dateString) return "-";
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch {
-    return "-";
-  }
-};
+import { formatDateTimeWithFallback } from "@/services/utils";
 
 interface Supplier {
   id?: number;
@@ -249,8 +235,8 @@ export default function SuppliersPage() {
     { key: "phone", header: "Phone" },
     { key: "country", header: "Country" },
     { key: "rating", header: "Rating", transform: (value) => value?.toFixed(1) || "N/A" },
-    { key: "created_at", header: "Created At", transform: (value) => formatDateTime(value) },
-    { key: "updated_at", header: "Updated At", transform: (value) => formatDateTime(value) },
+    { key: "created_at", header: "Created At", transform: (value) => formatDateTimeWithFallback(value) },
+    { key: "updated_at", header: "Updated At", transform: (value) => formatDateTimeWithFallback(value) },
   ];
 
   return (
@@ -393,8 +379,8 @@ export default function SuppliersPage() {
                     <TableCell>{supplier.phone}</TableCell>
                     <TableCell>{supplier.country}</TableCell>
                     <TableCell>{supplier.rating?.toFixed(1) || "N/A"}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{formatDateTime(supplier.created_at)}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{formatDateTime(supplier.updated_at)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{formatDateTimeWithFallback(supplier.created_at)}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{formatDateTimeWithFallback(supplier.updated_at)}</TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex justify-end gap-2">
                         <Button
@@ -592,11 +578,11 @@ export default function SuppliersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-muted-foreground">Created At</Label>
-                  <p className="text-base">{formatDateTime(selectedSupplier.created_at)}</p>
+                  <p className="text-base">{formatDateTimeWithFallback(selectedSupplier.created_at)}</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-muted-foreground">Updated At</Label>
-                  <p className="text-base">{formatDateTime(selectedSupplier.updated_at)}</p>
+                  <p className="text-base">{formatDateTimeWithFallback(selectedSupplier.updated_at)}</p>
                 </div>
               </div>
             </div>

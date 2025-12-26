@@ -34,27 +34,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { api } from "@/lib/api";
+import { api } from "@/services/api";
 import { toast } from "sonner";
 import { countries } from "@/lib/countries";
 import { Badge } from "@/components/ui/badge";
 
 // Helper function to format timestamps
-const formatDateTime = (dateString: string | null | undefined) => {
-  if (!dateString) return "-";
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch {
-    return "-";
-  }
-};
+import { formatDateTimeWithFallback } from "@/services/utils";
 
 export default function BuyersPage() {
   const [buyers, setBuyers] = useState<any[]>([]);
@@ -243,8 +229,8 @@ export default function BuyersPage() {
     { key: "website", header: "Website" },
     { key: "rating", header: "Rating" },
     { key: "status", header: "Status", transform: (value) => value === "active" ? "Active" : value === "inactive" ? "Inactive" : "On Hold" },
-    { key: "created_at", header: "Created At", transform: (value) => formatDateTime(value) },
-    { key: "updated_at", header: "Updated At", transform: (value) => formatDateTime(value) },
+    { key: "created_at", header: "Created At", transform: (value) => formatDateTimeWithFallback(value) },
+    { key: "updated_at", header: "Updated At", transform: (value) => formatDateTimeWithFallback(value) },
   ];
 
   return (
@@ -562,8 +548,8 @@ export default function BuyersPage() {
                       {buyer.status === "active" ? "Active" : buyer.status === "inactive" ? "Inactive" : "On Hold"}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDateTime(buyer.created_at)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDateTime(buyer.updated_at)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDateTimeWithFallback(buyer.created_at)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDateTimeWithFallback(buyer.updated_at)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(buyer)}>
@@ -655,11 +641,11 @@ export default function BuyersPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-muted-foreground">Created At</Label>
-                  <p className="text-base">{formatDateTime(selectedBuyer.created_at)}</p>
+                  <p className="text-base">{formatDateTimeWithFallback(selectedBuyer.created_at)}</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-muted-foreground">Updated At</Label>
-                  <p className="text-base">{formatDateTime(selectedBuyer.updated_at)}</p>
+                  <p className="text-base">{formatDateTimeWithFallback(selectedBuyer.updated_at)}</p>
                 </div>
               </div>
             </div>

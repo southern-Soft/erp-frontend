@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { api } from "@/lib/api";
+import { api } from "@/services/api";
 import { toast } from "sonner";
 
 export default function SamplesPage() {

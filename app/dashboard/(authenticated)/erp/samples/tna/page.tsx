@@ -24,7 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { PlusCircle, Search, Edit, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api } from "@/services/api";
 import { SizeSelector } from "@/components/ui/size-selector";
 
 export default function SampleTNAPage() {

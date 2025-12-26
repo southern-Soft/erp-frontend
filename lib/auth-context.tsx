@@ -2,6 +2,14 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { encryptToken, safeDecrypt } from "@/lib/crypto";
+import { authService } from "@/services/api";
+import { LINKS } from "@/router.config";
+import { AUTH_CONFIG } from "@/lib/config";
+
+// ============================================================================
+// Types
+// ============================================================================
 
 interface User {
   id: number;
@@ -24,13 +32,35 @@ interface AuthContextType {
   isLoading: boolean;
 }
 
+// ============================================================================
+// Configuration
+// ============================================================================
+
+// Cookie name from configuration
+const COOKIE_NAME = AUTH_CONFIG.COOKIE_NAME;
+
+// Storage keys for encrypted data
+const TOKEN_STORAGE_KEY = AUTH_CONFIG.TOKEN_STORAGE_KEY;
+const USER_STORAGE_KEY = AUTH_CONFIG.USER_STORAGE_KEY;
+
+// Legacy storage keys (for migration)
+const LEGACY_TOKEN_KEY = AUTH_CONFIG.LEGACY_TOKEN_KEY;
+const LEGACY_USER_KEY = AUTH_CONFIG.LEGACY_USER_KEY;
+
+// ============================================================================
+// Context
+// ============================================================================
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Helper functions for cookies
-function setCookie(name: string, value: string, days: number = 7) {
+// ============================================================================
+// Cookie Helpers
+// ============================================================================
+
+function setCookie(name: string, value: string, days: number = AUTH_CONFIG.COOKIE_EXPIRY_DAYS) {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Strict`;
 }
 
 function getCookie(name: string): string | null {
@@ -48,6 +78,10 @@ function deleteCookie(name: string) {
   document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:01 GMT;path=/`;
 }
 
+// ============================================================================
+// Auth Provider
+// ============================================================================
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -55,91 +89,162 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // Initialize authentication on mount
   useEffect(() => {
-    // Check for existing token on mount
+    initializeAuth();
+  }, []);
+
+  /**
+   * Initialize authentication from stored credentials
+   * Handles both encrypted (new) and legacy (old) storage formats
+   */
+  const initializeAuth = async () => {
     if (process.env.NODE_ENV === "development") {
       console.log("[AuthProvider] Initializing authentication...");
     }
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-    const cookieToken = getCookie("auth_token");
 
-    if (storedToken && storedUser) {
-      try {
-        const parsedUser = JSON.parse(storedUser);
-        setToken(storedToken);
-        setUser(parsedUser);
-        setCookie("auth_token", storedToken);
-      } catch (error) {
-        if (process.env.NODE_ENV === "development") {
-          console.error("[AuthProvider] Error parsing stored user:", error);
+    try {
+      // Try new encrypted storage first
+      const encryptedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
+      const encryptedUser = localStorage.getItem(USER_STORAGE_KEY);
+
+      if (encryptedToken && encryptedUser) {
+        // Decrypt stored values
+        const decryptedToken = await safeDecrypt(encryptedToken);
+        const decryptedUser = await safeDecrypt(encryptedUser);
+
+        if (decryptedToken && decryptedUser) {
+          const parsedUser = JSON.parse(decryptedUser);
+          setToken(decryptedToken);
+          setUser(parsedUser);
+
+          // Update cookie with encrypted token for middleware
+          setCookie(COOKIE_NAME, encryptedToken);
+
+          if (process.env.NODE_ENV === "development") {
+            console.log("[AuthProvider] Loaded encrypted credentials");
+          }
         }
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        deleteCookie("auth_token");
+      } else {
+        // Try legacy storage format for backward compatibility
+        const legacyToken = localStorage.getItem(LEGACY_TOKEN_KEY);
+        const legacyUser = localStorage.getItem(LEGACY_USER_KEY);
+
+        if (legacyToken && legacyUser) {
+          try {
+            const parsedUser = JSON.parse(legacyUser);
+
+            // Migrate to encrypted storage
+            const newEncryptedToken = await encryptToken(legacyToken);
+            const newEncryptedUser = await encryptToken(legacyUser);
+
+            localStorage.setItem(TOKEN_STORAGE_KEY, newEncryptedToken);
+            localStorage.setItem(USER_STORAGE_KEY, newEncryptedUser);
+
+            // Remove legacy storage
+            localStorage.removeItem(LEGACY_TOKEN_KEY);
+            localStorage.removeItem(LEGACY_USER_KEY);
+
+            // Delete old cookie and set new one
+            deleteCookie(AUTH_CONFIG.LEGACY_COOKIE_NAME);
+            setCookie(COOKIE_NAME, newEncryptedToken);
+
+            setToken(legacyToken);
+            setUser(parsedUser);
+
+            if (process.env.NODE_ENV === "development") {
+              console.log("[AuthProvider] Migrated legacy credentials to encrypted storage");
+            }
+          } catch (error) {
+            if (process.env.NODE_ENV === "development") {
+              console.error("[AuthProvider] Error migrating legacy credentials:", error);
+            }
+            // Clear corrupted legacy data
+            localStorage.removeItem(LEGACY_TOKEN_KEY);
+            localStorage.removeItem(LEGACY_USER_KEY);
+            deleteCookie(AUTH_CONFIG.LEGACY_COOKIE_NAME);
+          }
+        } else {
+          // No stored credentials - clear any stale cookies
+          const cookieToken = getCookie(COOKIE_NAME);
+          const legacyCookieToken = getCookie(AUTH_CONFIG.LEGACY_COOKIE_NAME);
+          if (cookieToken) deleteCookie(COOKIE_NAME);
+          if (legacyCookieToken) deleteCookie(AUTH_CONFIG.LEGACY_COOKIE_NAME);
+        }
       }
-    } else if (cookieToken && !storedToken) {
-      // Cookie exists but no localStorage - clear the stale cookie
-      deleteCookie("auth_token");
+    } catch (error) {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[AuthProvider] Error initializing auth:", error);
+      }
+      // Clear all stored data on error
+      clearAllStoredData();
     }
+
     setIsLoading(false);
-  }, []);
+  };
+
+  /**
+   * Clear all stored authentication data
+   */
+  const clearAllStoredData = () => {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(USER_STORAGE_KEY);
+    localStorage.removeItem(LEGACY_TOKEN_KEY);
+    localStorage.removeItem(LEGACY_USER_KEY);
+    deleteCookie(COOKIE_NAME);
+    deleteCookie(AUTH_CONFIG.LEGACY_COOKIE_NAME);
+  };
 
   // Redirect to login if on protected route without user
   useEffect(() => {
-    if (!isLoading && !user && pathname.startsWith("/dashboard") && !pathname.startsWith("/dashboard/login")) {
-      router.push("/dashboard/login");
+    if (!isLoading && !user) {
+      // Check if on protected route (dashboard but not login/public pages)
+      const isProtectedRoute =
+        pathname.startsWith("/dashboard") &&
+        !pathname.startsWith("/dashboard/login") &&
+        !pathname.startsWith("/dashboard/forgot");
+
+      // Also check new auth routes
+      const isPublicRoute =
+        pathname === LINKS.LOGIN ||
+        pathname === LINKS.REGISTER ||
+        pathname === LINKS.FORGOT_PASSWORD ||
+        pathname === LINKS.HOME;
+
+      if (isProtectedRoute && !isPublicRoute) {
+        router.push(LINKS.LOGIN);
+      }
     }
   }, [isLoading, user, pathname, router]);
 
+  /**
+   * Login with username and password
+   */
   const login = async (username: string, password: string) => {
     try {
-      // Login request - use relative URL, Next.js rewrites will proxy to backend
-      const response = await fetch(`/api/v1/auth/login`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        let errorMessage = "Login failed";
-        try {
-          const error = await response.json();
-          errorMessage = typeof error.detail === 'string'
-            ? error.detail
-            : JSON.stringify(error.detail || error);
-        } catch (e) {
-          errorMessage = `Login failed with status: ${response.status}`;
-        }
-        throw new Error(errorMessage);
-      }
-
-      const data = await response.json();
+      // Use service layer for login
+      const data = await authService.login(username, password);
 
       // Get user info
-      const userResponse = await fetch(`/api/v1/auth/me`, {
-        headers: {
-          "Authorization": `Bearer ${data.access_token}`,
-        },
-      });
+      const userData = await authService.getMe(data.access_token);
 
-      const userData = await userResponse.json();
+      // Encrypt before storing
+      const encryptedTokenValue = await encryptToken(data.access_token);
+      const encryptedUserValue = await encryptToken(JSON.stringify(userData));
 
-      // Store in state
+      // Store in state (plaintext for runtime use)
       setToken(data.access_token);
       setUser(userData);
 
-      // Store in localStorage
-      localStorage.setItem("token", data.access_token);
-      localStorage.setItem("user", JSON.stringify(userData));
+      // Store encrypted in localStorage
+      localStorage.setItem(TOKEN_STORAGE_KEY, encryptedTokenValue);
+      localStorage.setItem(USER_STORAGE_KEY, encryptedUserValue);
 
-      // Store in cookie for middleware
-      setCookie("auth_token", data.access_token);
+      // Store encrypted in cookie for middleware
+      setCookie(COOKIE_NAME, encryptedTokenValue);
 
       // Redirect to dashboard
-      router.push("/dashboard/erp");
+      router.push(LINKS.DASHBOARD().path);
       router.refresh();
     } catch (error: any) {
       if (process.env.NODE_ENV === "development") {
@@ -149,20 +254,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  /**
+   * Logout and clear all credentials
+   */
   const logout = () => {
     // Clear state
     setUser(null);
     setToken(null);
 
-    // Clear localStorage
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-
-    // Clear cookie
-    deleteCookie("auth_token");
+    // Clear all stored data
+    clearAllStoredData();
 
     // Redirect to login
-    router.push("/dashboard/login");
+    router.push(LINKS.LOGIN);
     router.refresh();
   };
 
@@ -172,6 +276,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+// ============================================================================
+// Hook
+// ============================================================================
 
 export function useAuth() {
   const context = useContext(AuthContext);

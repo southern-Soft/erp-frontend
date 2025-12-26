@@ -31,7 +31,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { PlusCircle, Edit, Trash2, Search, X, ArrowRight, RefreshCw } from "lucide-react";
-import { api } from "@/lib/api";
+import { api } from "@/services/api";
 import { toast } from "sonner";
 import { uomUnits, getCompatibleUoms, convertUom } from "@/lib/uom-units";
 

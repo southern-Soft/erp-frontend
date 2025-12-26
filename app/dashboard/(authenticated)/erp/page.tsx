@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, Users, Package, Settings, FileText, Shield } from "lucide-react";
+import { APP_CONFIG } from "@/lib/config";
 
 export default function ERPDashboard() {
   return (
@@ -9,7 +10,7 @@ export default function ERPDashboard() {
       {/* Welcome Header */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Welcome to Southern Apparels ERP System
+          Welcome to {APP_CONFIG.NAME} {APP_CONFIG.DESCRIPTION}
         </h1>
         <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
           Complete enterprise resource planning for ready-made garment manufacturing.

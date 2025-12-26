@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 
 import { notifications, type Notification } from "./data";
@@ -47,8 +47,7 @@ const Notifications = () => {
               <div className="flex flex-1 items-start gap-2">
                 <div className="flex-none">
                   <Avatar className="size-8">
-                    <AvatarImage src={`https://bundui-images.netlify.app/avatars/${item.avatar}`} />
-                    <AvatarFallback> {item.title.charAt(0)}</AvatarFallback>
+                    <AvatarFallback>{item.title.charAt(0)}</AvatarFallback>
                   </Avatar>
                 </div>
                 <div className="flex flex-1 flex-col gap-1">

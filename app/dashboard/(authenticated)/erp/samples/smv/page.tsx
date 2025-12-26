@@ -24,6 +24,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Calculator, Search, PlusCircle, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
+import { calculateTotal } from "@/services/utils";
 
 const SIZE_OPTIONS = ["S", "M", "L", "XL", "2XL", "3XL"];
 
@@ -249,10 +250,6 @@ export default function SMVCalculationPage() {
     );
   };
 
-  const calculateTotalSMV = () => {
-    return operationRows.reduce((sum, row) => sum + (row.total_duration || 0), 0);
-  };
-
   const handleSubmit = async () => {
     if (!sampleInfo) {
       toast.error("Please select a sample first");
@@ -272,7 +269,7 @@ export default function SMVCalculationPage() {
         category: sampleInfo.category,
         gauge: sampleInfo.gauge,
         operations: JSON.stringify(operationRows), // Convert array to JSON string
-        total_smv: calculateTotalSMV(),
+        total_smv: calculateTotal(operationRows, (row) => row.total_duration || 0),
       };
 
       const response = await fetch("/api/v1/samples/smv", {
@@ -570,7 +567,7 @@ export default function SMVCalculationPage() {
                       </TableCell>
                       <TableCell>
                         <Badge className="text-lg px-4 py-2 bg-green-600">
-                          {calculateTotalSMV().toFixed(2)} min
+                          {calculateTotal(operationRows, (row) => row.total_duration || 0).toFixed(2)} min
                         </Badge>
                       </TableCell>
                       <TableCell></TableCell>

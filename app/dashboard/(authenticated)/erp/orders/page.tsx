@@ -33,7 +33,9 @@ import { PlusCircle, Edit, Trash2, Search, X } from "lucide-react";
 import { ExportButton } from "@/components/export-button";
 import type { ExportColumn } from "@/lib/export-utils";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api } from "@/services/api";
+import { generateSclPo } from "@/services/utils";
+import { ID_CONFIG } from "@/lib/config";
 
 export default function OrderManagementPage() {
   const [orders, setOrders] = useState<any[]>([]);
@@ -141,49 +143,6 @@ export default function OrderManagementPage() {
     }
   }, [filteredOrders, rowLimit]);
 
-  const generateSclPo = async () => {
-    try {
-      // Get current year's last 2 digits
-      const currentYear = new Date().getFullYear();
-      const yearSuffix = currentYear.toString().slice(-2);
-
-      // Get existing orders to find the next sequence
-      const allOrders = await api.orders.getAll();
-
-      // Safety check
-      if (!Array.isArray(allOrders)) {
-        console.warn("api.orders.getAll() returned non-array:", allOrders);
-        return `SCLPO_${yearSuffix}_0001`;
-      }
-
-      const currentYearOrders = allOrders.filter((order: any) =>
-        order.scl_po && order.scl_po.startsWith(`SCLPO_${yearSuffix}_`)
-      );
-
-      // Find the max sequence number
-      let maxSequence = 0;
-      currentYearOrders.forEach((order: any) => {
-        const parts = order.scl_po.split('_');
-        if (parts.length === 3) {
-          const seq = parseInt(parts[2]);
-          if (!isNaN(seq) && seq > maxSequence) {
-            maxSequence = seq;
-          }
-        }
-      });
-
-      const sequence = maxSequence + 1;
-      const sequenceStr = sequence.toString().padStart(4, '0');
-
-      return `SCLPO_${yearSuffix}_${sequenceStr}`;
-    } catch (error) {
-      console.error("Failed to generate SCL PO:", error);
-      // Fallback
-      const yearSuffix = new Date().getFullYear().toString().slice(-2);
-      return `SCLPO_${yearSuffix}_0001`;
-    }
-  };
-
   const handleStyleChange = (styleId: string) => {
     const style = styles.find((s) => s.id.toString() === styleId);
     if (style) {
@@ -202,7 +161,8 @@ export default function OrderManagementPage() {
 
       // Auto-generate SCL PO for new orders
       // We do this AFTER opening dialog so user sees it loading/appearing
-      const newSclPo = await generateSclPo();
+      const allOrders = await api.orders.getAll();
+      const newSclPo = generateSclPo(Array.isArray(allOrders) ? allOrders : []);
       setFormData(prev => ({ ...prev, scl_po: newSclPo }));
     } else {
       setIsDialogOpen(false);
@@ -574,10 +534,10 @@ export default function OrderManagementPage() {
                     value={formData.scl_po}
                     disabled
                     className="font-mono font-bold bg-muted"
-                    placeholder="SCLPO_25_0001"
+                    placeholder={`${ID_CONFIG.PO_PREFIX}_25_0001`}
                   />
                   <p className="text-xs text-muted-foreground">
-                    Format: SCLPO_YY_0001
+                    Format: {ID_CONFIG.PO_PREFIX}_YY_0001
                   </p>
                 </div>
 

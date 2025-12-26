@@ -13,14 +13,15 @@ import { ActiveThemeProvider } from "@/components/shared/active-theme";
 import { DEFAULT_THEME } from "@/lib/themes";
 import { ClientProviders } from "@/components/providers/client-providers";
 import { DevTools } from "@/components/dev-tools";
+import { APP_CONFIG } from "@/lib/config";
 
 export const metadata: Metadata = {
-  title: "Southern Apparels",
-  description: "Southern Apparels and Holdings ERP System",
+  title: APP_CONFIG.NAME,
+  description: `${APP_CONFIG.COMPANY_NAME} ${APP_CONFIG.DESCRIPTION}`,
   icons: {
-    icon: "/logo.jpeg",
-    shortcut: "/logo.jpeg",
-    apple: "/logo.jpeg",
+    icon: APP_CONFIG.LOGO_PATH,
+    shortcut: APP_CONFIG.LOGO_PATH,
+    apple: APP_CONFIG.LOGO_PATH,
   },
 };
 

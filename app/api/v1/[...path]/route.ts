@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-// Backend URL - use Docker service name inside container, fallback for local dev
-const BACKEND_URL = process.env.BACKEND_URL || 'http://backend:8000';
+import { API_CONFIG } from '@/lib/config';
 
 async function proxyRequest(request: NextRequest, path: string[]) {
   const url = new URL(request.url);
   const targetPath = `/api/v1/${path.join('/')}${url.search}`;
-  const targetUrl = `${BACKEND_URL}${targetPath}`;
+  const targetUrl = `${API_CONFIG.BACKEND_URL}${targetPath}`;
 
   try {
     // Get headers from the incoming request
@@ -20,7 +18,7 @@ async function proxyRequest(request: NextRequest, path: string[]) {
 
     // Add timeout to prevent hanging requests
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), API_CONFIG.TIMEOUT_MS);
 
     const fetchOptions: RequestInit = {
       method: request.method,

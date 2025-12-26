@@ -33,27 +33,13 @@ import {
 import { PlusCircle, Edit, Trash2, Search, X, RefreshCw } from "lucide-react";
 import { ExportButton } from "@/components/export-button";
 import type { ExportColumn } from "@/lib/export-utils";
-import { api } from "@/lib/api";
+import { api } from "@/services/api";
 import { toast } from "sonner";
 import { ColorSelectorEnhanced } from "@/components/ui/color-selector-enhanced";
 import { SizeSelectorEnhanced } from "@/components/ui/size-selector-enhanced";
 
-// Helper function to format timestamps
-const formatDateTime = (dateString: string | null | undefined) => {
-  if (!dateString) return "-";
-  try {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  } catch {
-    return "-";
-  }
-};
+// Helper functions
+import { formatDateTimeWithFallback, generateStyleVariantId } from "@/services/utils";
 
 export default function StyleVariantsPage() {
   const [styleVariants, setStyleVariants] = useState<any[]>([]);
@@ -538,8 +524,8 @@ export default function StyleVariantsPage() {
     { key: "colour_code", header: "Colour Code (Hex)" },
     { key: "colour_ref", header: "Colour Reference" },
     { key: "sizes", header: "Sizes", transform: (value) => Array.isArray(value) ? value.join(", ") : "-" },
-    { key: "created_at", header: "Created At", transform: (value) => formatDateTime(value) },
-    { key: "updated_at", header: "Updated At", transform: (value) => formatDateTime(value) },
+    { key: "created_at", header: "Created At", transform: (value) => formatDateTimeWithFallback(value) },
+    { key: "updated_at", header: "Updated At", transform: (value) => formatDateTimeWithFallback(value) },
   ];
 
   return (
@@ -963,8 +949,8 @@ export default function StyleVariantsPage() {
                       )
                     )}
                   </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDateTime(variant.created_at)}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{formatDateTime(variant.updated_at)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDateTimeWithFallback(variant.created_at)}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{formatDateTimeWithFallback(variant.updated_at)}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                     <div className="flex justify-end gap-2">
                           {variant.isGrouped ? (
@@ -1143,11 +1129,11 @@ export default function StyleVariantsPage() {
               <div className="grid grid-cols-2 gap-4 border-t pt-4">
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-muted-foreground">Created At</Label>
-                  <p className="text-base">{formatDateTime(selectedVariant.created_at)}</p>
+                  <p className="text-base">{formatDateTimeWithFallback(selectedVariant.created_at)}</p>
                 </div>
                 <div className="space-y-2">
                   <Label className="text-sm font-semibold text-muted-foreground">Updated At</Label>
-                  <p className="text-base">{formatDateTime(selectedVariant.updated_at)}</p>
+                  <p className="text-base">{formatDateTimeWithFallback(selectedVariant.updated_at)}</p>
                 </div>
               </div>
             </div>

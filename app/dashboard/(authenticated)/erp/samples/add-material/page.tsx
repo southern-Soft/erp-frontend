@@ -32,7 +32,7 @@ import { PlusCircle, Edit, Trash2, Search, X, Check, ChevronsUpDown } from "luci
 import { ExportButton } from "@/components/export-button";
 import type { ExportColumn } from "@/lib/export-utils";
 import { toast } from "sonner";
-import { api } from "@/lib/api";
+import { api } from "@/services/api";
 import { Card } from "@/components/ui/card";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
