@@ -111,38 +111,47 @@ export default function UsersManagementPage() {
     setFilteredUsers(result);
   }, [users, filters]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (!token) {
-        toast.error("Not authenticated");
-        return;
-      }
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  try {
+    if (!token) {
+      toast.error("Not authenticated");
+      return;
+    }
 
+    if (editingUser) {
+      // UPDATING EXISTING USER
       const dataToSubmit = {
         ...formData,
         password: formData.password || undefined, // Only include password if provided
       };
-
-      if (editingUser) {
-        await api.users.update(editingUser.id, dataToSubmit, token);
-        toast.success("User updated successfully");
-      } else {
-        if (!formData.password) {
-          toast.error("Password is required for new users");
-          return;
-        }
-        await api.users.create(dataToSubmit, token);
-        toast.success("User created successfully");
+      await api.users.update(editingUser.id, dataToSubmit, token);
+      toast.success("User updated successfully");
+    } else {
+      // CREATING NEW USER
+      if (!formData.password) {
+        toast.error("Password is required for new users");
+        return;
       }
-      setIsDialogOpen(false);
-      resetForm();
-      loadUsers();
-    } catch (error: any) {
-      toast.error(error?.message || "Failed to save user");
-      console.error(error);
+
+      // TypeScript now knows password is definitely a string here
+      const dataToSubmit = {
+        ...formData,
+        password: formData.password,
+      };
+      
+      await api.users.create(dataToSubmit, token);
+      toast.success("User created successfully");
     }
-  };
+    
+    setIsDialogOpen(false);
+    resetForm();
+    loadUsers();
+  } catch (error: any) {
+    toast.error(error?.message || "Failed to save user");
+    console.error(error);
+  }
+};
 
   const handleEdit = (user: any) => {
     setEditingUser(user);
